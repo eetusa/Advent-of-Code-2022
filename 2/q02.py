@@ -6,14 +6,14 @@ from enum import Enum
 class RPS(Enum):
     ROCK = 1
     PAPER = 2
-    SCICCORS = 3
+    SCISSORS = 3
 
     @classmethod
-    def _missing_(cls, value):
+    def _missing_(self, value):
         if value == 0:
-            return cls(3)
+            return self(3)
         if value == 4:
-            return cls(1)
+            return self(1)
         return value
 
 class WLD(Enum):
@@ -21,8 +21,8 @@ class WLD(Enum):
     LOSE = 2
     DRAW = 3
 
-dict_a = {"A": RPS.ROCK, "B": RPS.PAPER, "C": RPS.SCICCORS, "X": RPS.ROCK, "Y": RPS.PAPER, "Z": RPS.SCICCORS}
-dict_b = {"A": RPS.ROCK, "B": RPS.PAPER, "C": RPS.SCICCORS, "X": WLD.LOSE, "Y": WLD.DRAW, "Z": WLD.WIN}
+dict_a = {"A": RPS.ROCK, "B": RPS.PAPER, "C": RPS.SCISSORS, "X": RPS.ROCK, "Y": RPS.PAPER, "Z": RPS.SCISSORS}
+dict_b = {"A": RPS.ROCK, "B": RPS.PAPER, "C": RPS.SCISSORS, "X": WLD.LOSE, "Y": WLD.DRAW, "Z": WLD.WIN}
 
 # part_a
 ################
