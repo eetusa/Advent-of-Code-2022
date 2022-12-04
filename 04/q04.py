@@ -29,21 +29,14 @@ def getRangesFromLine(line: str):
     split = line.split(",")
     return [Range(split[0].split("-")), Range(split[1].split("-"))]
 
-def puzzle_a():
+def solve(name: str, func):
     count = 0
     for line in lines:
         ranges = getRangesFromLine(line)
-        if areRangesFullyOverlapped(ranges):
+        if func(ranges):
             count = count + 1
-    print("a:", count)
+    print(name+":", count)
 
-def puzzle_b():
-    count = 0
-    for line in lines:
-        ranges = getRangesFromLine(line)
-        if areRangesPartlyOverlapped(ranges):
-            count = count + 1
-    print("b:",count)
+solve("a", areRangesFullyOverlapped)
+solve("b", areRangesPartlyOverlapped)
 
-puzzle_a()
-puzzle_b()
