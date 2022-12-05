@@ -13,7 +13,8 @@ import re
 #[N] [C] [Q] [H] [N] [D] [Q] [M] [B]
 #
 # Example command:
-# move 2 from 2 to 1
+#
+# 'move 2 from 2 to 1'
 
 class Stacks():
     def __init__(self, lines):
