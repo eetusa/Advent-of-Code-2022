@@ -46,11 +46,11 @@ class Stacks():
             self.stacks[source].pop(0)
 
     def act_move_order(self, line: str, keep_stack_order: bool):
-        amount, source, target = re.findall(r'\d+', line)
+        amount, source, target = list(map(int, re.findall(r'\d+', line)))
         if keep_stack_order:
-            self.move_from_stack_to_stack(int(amount), int(source), int(target), True)
+            self.move_from_stack_to_stack(amount, source, target, True)
         else:
-            self.move_from_stack_to_stack(int(amount), int(source), int(target), False)
+            self.move_from_stack_to_stack(amount, source, target, False)
 
     def print_ans(self):
         ans = ""
