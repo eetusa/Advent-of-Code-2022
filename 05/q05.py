@@ -34,10 +34,10 @@ class Stacks():
                     else:
                         self.stacks[column] = [line[idx+1]]
 
-    def move_from_stack_to_stack(self, amount: int, source: int, target: int, keep_order: bool):
+    def move_from_stack_to_stack(self, amount: int, source: int, target: int, keep_stack_order: bool):
         containers_to_move = []
         for i in range(0, amount):
-            if keep_order:
+            if keep_stack_order:
                 containers_to_move.insert(0, self.stacks.get(source)[i])
             else:
                 containers_to_move.append(self.stacks.get(source)[i])
@@ -45,9 +45,9 @@ class Stacks():
             self.stacks[target].insert(0, container)
             self.stacks[source].pop(0)
 
-    def act_move_order(self, line: str, keep_order: bool):
+    def act_move_order(self, line: str, keep_stack_order: bool):
         amount, source, target = re.findall(r'\d+', line)
-        if keep_order:
+        if keep_stack_order:
             self.move_from_stack_to_stack(int(amount), int(source), int(target), True)
         else:
             self.move_from_stack_to_stack(int(amount), int(source), int(target), False)
@@ -61,22 +61,14 @@ class Stacks():
     def reset(self):
         self.initialize_stack_rows()
 
-    def solve_a(self):
+    def solve(self, keep_stack_order: bool):
         for line in self.lines:
             if len(line) == 0 or line[0] != 'm':
                 continue
-            self.act_move_order(line, False)
-        self.print_ans()
-        self.reset()
-    
-    def solve_b(self):
-        for line in self.lines:
-            if len(line) == 0 or line[0] != 'm':
-                continue
-            self.act_move_order(line, True)
+            self.act_move_order(line, keep_stack_order)
         self.print_ans()
         self.reset()
 
 stacks = Stacks(lines)
-stacks.solve_a()
-stacks.solve_b()
+stacks.solve(False)
+stacks.solve(True)
