@@ -19,9 +19,9 @@ import re
 class Stacks():
     def __init__(self, lines):
         self.lines = lines
-        self.initialize_stack_rows()
+        self.reset_stack()
 
-    def initialize_stack_rows(self):
+    def reset_stack(self):
         self.stacks = {}
         for line in self.lines:
             if (len(line) == 0):
@@ -58,16 +58,13 @@ class Stacks():
             ans = ans + self.stacks[key][0]
         print(ans)
 
-    def reset(self):
-        self.initialize_stack_rows()
-
     def solve(self, keep_stack_order: bool):
         for line in self.lines:
             if len(line) == 0 or line[0] != 'm':
                 continue
             self.act_move_order(line, keep_stack_order)
         self.print_ans()
-        self.reset()
+        self.reset_stack()
 
 stacks = Stacks(lines)
 stacks.solve(False)
