@@ -1,6 +1,5 @@
 from aocd import lines
 input = lines[0]
-# input = "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"
 
 def check_non_repeating_values(array):
     return len(set(array)) == len(array)
