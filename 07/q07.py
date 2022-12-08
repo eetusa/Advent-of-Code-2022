@@ -104,13 +104,10 @@ class Directory():
             self.set_total_size()
         return self.total_size
 
-
-
-
 class Crawler():
     def __init__(self):
         self.current_dir = None
-        self.path = []
+        self.path = [] # useless in solution, usable only as visualization for the crawling process
         self.root = None
 
     def parse_line(self, line):
@@ -149,7 +146,6 @@ class Crawler():
         if output.type == OutputType.FILE:
             self.current_dir.add_file(File("placeholder", int(output.value)))
         return
-
 
     def investigate(self, lines):
         for line in lines:
