@@ -48,11 +48,8 @@ def get_total_scenic_score(i, j, array):
     # Edges are always 0 and the result is a multiplication -> return 0 from any edge
     if (j == 0 or j == len(array[i])-1 or i == 0 or i == len(array)-1):
         return 0
-    top = get_scenic_score(i, j, 1, 0, array)
-    bottom = get_scenic_score(i, j, -1, 0, array)
-    right = get_scenic_score(i, j, 0, 1, array)
-    left = get_scenic_score(i, j, 0, -1, array)
-    return reduce(lambda x, y: x*y, [top, bottom, left, right])
+    scores = [get_scenic_score(i, j, 1, 0, array), get_scenic_score(i, j, -1, 0, array), get_scenic_score(i, j, 0, 1, array), get_scenic_score(i, j, 0, -1, array)]
+    return reduce(lambda x, y: x*y, scores)
 
 def solve_a(array):
     total_visible = 0
@@ -67,7 +64,6 @@ def solve_b(array):
     for i, row in enumerate(array):
         for j, column in enumerate(row):
             scenic_score = get_total_scenic_score(i, j, array)
-            #print(scenic_score)
             if scenic_score > best_score:
                 best_score = scenic_score
     print("b:", best_score)
