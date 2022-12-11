@@ -112,7 +112,7 @@ class Troop():
             target_monkey: Monkey = self.monkeys[result[0]]
             target_monkey.add_item(result[1])
 
-    def run(self, rounds, relief: bool, mod: bool = False):
+    def run(self, rounds, relief: bool = True, mod: bool = False):
         if not mod:
             self.mod = None
         self.relief = relief
@@ -128,6 +128,6 @@ class Troop():
         print(reduce(lambda x, y: x*y, monkey_businesses[:2]))
 
 troop = Troop(lines)
-troop.run(20, relief=True)
+troop.run(20)
 troop = Troop(lines)
 troop.run(10000, relief=False, mod=True)
