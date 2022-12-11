@@ -33,9 +33,6 @@ class Monkey():
             return (self.if_true, item)
         return (self.if_false, item)
 
-    def test_pass(self, item):
-        return item % self.test == 0
-
     def get_operation(self, line):
         value = get_numbers(line)
         if len(value) == 0:
