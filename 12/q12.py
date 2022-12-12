@@ -100,6 +100,29 @@ class Grid():
                 steps.append(self.matrix[i][dj])
         return steps
 
+
+    def get_possible_next_steps_reversed(self, node: Node) -> 'list[Node]':
+        i, j = node.i, node.j
+        steps = []
+        current_height = self.matrix[i][j].height
+        if i > 0:
+            di = i-1
+            if self.matrix[di][j].height >= current_height - 1 and self.matrix[di][j] not in self.closed:
+                steps.append(self.matrix[di][j])
+        if i < len(self.matrix)-1:
+            di = i+1
+            if self.matrix[di][j].height >= current_height - 1 and self.matrix[di][j] not in self.closed:
+                steps.append(self.matrix[di][j])
+        if j > 0:
+            dj = j-1
+            if self.matrix[i][dj].height >= current_height - 1 and self.matrix[i][dj] not in self.closed:
+                steps.append(self.matrix[i][dj])
+        if j < len(self.matrix[i])-1:
+            dj = j+1
+            if self.matrix[i][dj].height >= current_height - 1 and self.matrix[i][dj] not in self.closed:
+                steps.append(self.matrix[i][dj])
+        return steps
+
     def get_h_cost(self, node: Node):
         return node.distance_to(self.get_goal_node())
 
@@ -168,12 +191,36 @@ class Grid():
                 if step not in self.open:
                     self.open.append(step)
         return self.construct_route()
-
+    
     def solve_a(self):
         print("Solving best route from start (part a)")
         result = self.solve()
         print("a, best route is of length:",result[0])
         print()
+
+    def solve_hacky_reverse(self, starting_node: Node = None):
+        if starting_node != None:
+            self.start = (starting_node.i, starting_node.j)
+        self.get_starting_node().g_cost = 0
+        self.get_starting_node().h_cost = 0
+        self.open.append(self.get_starting_node())
+        while True:
+            self.sort_open()
+            current = self.open.pop(0)
+            self.closed.append(current)
+            if current.height == 1:
+                self.goal = (current.i, current.j)
+                break
+            steps = self.get_possible_next_steps_reversed(current)
+            for step in steps:
+                if step not in self.open or current.g_cost + 1 < step.g_cost:
+                    step.g_cost = current.g_cost + 1
+                    step.h_cost = 0
+                    step.set_f_cost()
+                    step.set_parent(current)
+                if step not in self.open:
+                    self.open.append(step)
+        return self.construct_route()
 
     def solve_b(self):
         print("Solving best scenic route (part b)")
@@ -190,11 +237,23 @@ class Grid():
                 best_node = result[1]
         print("b, best scenic route is of length:",shortest)
 
-# test_input = ["Sabqponm", "abcryxxl", "accszExk", "acctuvwj", "abdefghi"]
-# grid = Grid(test_input)
-# grid.solve_a()
-# grid.solve_b()
+    # Reverses the search from the goal to nearest height of 1 (or letter 'a' in input)
+    # Didn't bother to refactor the code to be universal for both search cases (a and b)
+    def solve_b_faster(self):
+        print("Solving best scenic route (part b)")
+        self.reset()
+        result = self.solve_hacky_reverse(self.matrix[self.goal[0]][self.goal[1]])
+        print("a, best route is of length:",result[0])
+        print()
+
+
+test_input = ["Sabqponm", "abcryxxl", "accszExk", "acctuvwj", "abdefghi"]
+grid = Grid(test_input)
+grid.solve_a()
+#grid.solve_b()         #slower
+grid.solve_b_faster()
 
 grid = Grid(lines)
 grid.solve_a()
-grid.solve_b()
+# grid.solve_b()        #slower
+grid.solve_b_faster()
