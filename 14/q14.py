@@ -16,25 +16,16 @@ class Cell():
         self.type: CellType = type
         self.matrix = matrix
         self.static = None
+        self.cycle = 0
 
     def __str__(self) -> str:
-        return "("+str(self.i)+", "+str(self.j)+")"
+        return "("+str(self.i)+", "+str(self.j)+", "+str(self.type)+")"
 
     def __repr__(self) -> str:
         return str(self)
 
     def step(self):
         pass
-
-class SandProducer(Cell):
-    def __init__(self, i, j, matrix):
-        super().__init__(i, j, CellType.SAND_SOURCE, matrix)
-
-    def step(self):
-        sand_i = self.i+1
-        sand_j = self.j
-        self.matrix[sand_i][sand_j] = Sand(sand_i, sand_j, self.matrix)
-        print("producer step")
 
 class Sand(Cell):
     def __init__(self, i, j, matrix):
@@ -47,35 +38,58 @@ class Sand(Cell):
         if self.matrix[i+1][j].type == CellType.AIR:
             self.matrix[i+1][j] = Sand(i+1, j, self.matrix)
             self.matrix[i][j] = Cell(i, j, CellType.AIR, self.matrix)
-            return 1
+            return self.matrix[i+1][j]
+        elif self.matrix[i+1][j-1].type == CellType.AIR:
+            self.matrix[i+1][j-1] = Sand(i+1, j-1, self.matrix)
+            self.matrix[i][j] = Cell(i, j, CellType.AIR, self.matrix)
+            return self.matrix[i+1][j-1]
+        elif self.matrix[i+1][j+1].type == CellType.AIR:
+            self.matrix[i+1][j+1] = Sand(i+1, j+1, self.matrix)
+            self.matrix[i][j] = Cell(i, j, CellType.AIR, self.matrix)
+            return self.matrix[i+1][j+1]
+
+        if self.matrix[i+1][j].type == CellType.VOID:
+            return None
+        elif self.matrix[i+1][j-1].type == CellType.VOID:
+            return None
+        elif self.matrix[i+1][j+1].type == CellType.VOID:
+            return None
         self.static = True
-        return -1
+        return self
 
 class World():
-    def __init__(self, input) -> None:
+    def __init__(self, input, has_floor = False) -> None:
         self.height = None
         self.width = None
         self.min_draw_x = None
         self.min_draw_y = None
         self.void_limit = None
+        self.producer: tuple = None
+        self.has_floor = has_floor
+        self.floor_level = None
         self.get_xy_ranges(input)
-
         self.matrix: 'list[list[Cell]]' = []
         self.sand_source = (500,0)
         self.init_world()
         self.parse_input(input)
 
     def init_world(self):
+        prod_i = -1
+        prod_j = -1
         for i in range(self.height):
             row = []
             for j in range(self.width):
                 if (j, i) == self.sand_source:
-                    row.append(SandProducer(i, j, self.matrix))
-                elif (i > self.void_limit):
+                    row.append(Cell(i, j, CellType.AIR, self.matrix))
+                    prod_i, prod_j = i, j
+                elif (i > self.void_limit and not self.has_floor):
                     row.append(Cell(i, j, CellType.VOID, self.matrix))
+                elif (i == self.floor_level and self.has_floor):
+                    row.append(Cell(i, j, CellType.ROCK, self.matrix))
                 else:
                     row.append(Cell(i, j, CellType.AIR, self.matrix))
             self.matrix.append(row)
+        self.producer = (prod_i, prod_j)
 
     def parse_input(self, input):
         for line in input:
@@ -123,19 +137,21 @@ class World():
             if (i < 10):
                 row += " "
             for j in range(self.min_draw_x,self.width):
-                cell = self.matrix[i][j]
-                if cell.type == CellType.AIR:
-                    row += ". "
-                elif cell.type == CellType.ROCK:
-                    row += "# "
-                elif cell.type == CellType.SAND:
-                    row += "O "
-                elif cell.type == CellType.SAND_SOURCE:
+                if ((i,j) == self.producer):
                     row += "+"
                 else:
-                    row += "_ "
+                    cell = self.matrix[i][j]
+                    if cell.type == CellType.AIR:
+                        row += ". "
+                    elif cell.type == CellType.ROCK:
+                        row += "# "
+                    elif cell.type == CellType.SAND:
+                        row += "O "
+                    else:
+                        row += "_ "
             print(row)
     
+    # define ranges for matrix and drawing from input
     def get_xy_ranges(self, data):
         min_x = 999999
         min_y = 999999
@@ -156,40 +172,70 @@ class World():
                 if y > max_y:
                     max_y = y
         self.height = max_y + 3
-        self.width = max_x + 2
+        self.width = max_x + 3
+        if self.has_floor:
+            self.width = self.width*2
+        self.floor_level = max_y + 2
         self.void_limit = max_y
         self.min_draw_x = min_x - 2
+        if (self.has_floor): 
+            self.min_draw_x = self.min_draw_x - int(self.min_draw_x/20)
         self.min_draw_y = 0
 
 class Simulator():
     def __init__(self, world: World) -> None:
-        self.cycles = 0
+        self.cycle = 0
         self.world = copy.deepcopy(world)
-        self.world.print_world()
         self.sand_moving = False
+        self.sand_produced = 0
+        self.simulating = True
+        self.active_sand: Sand = None
 
-    def simulate(self):
-        while True:
-            for i in range(len(self.world.matrix)):
-                for j in range(len(self.world.matrix[i])):
-                    cell = self.world.matrix[i][j]
-                    if isinstance(cell, SandProducer):
-                        if not self.sand_moving:
-                            cell.step()
-                            self.sand_moving = True
-                            print("sand move")
-                    elif isinstance(cell, Sand):
-                        if cell.static:
-                            did_move = cell.step()
-                            if did_move == -1:
-                                self.sand_moving = False
-                                print("Sand not move")
-                        else:
-                            break
-        self.world.print_world()
+    def produce_sand(self):
+        sand_i = self.world.producer[0]
+        sand_j = self.world.producer[1]
+        if self.world.matrix[sand_i][sand_j].type == CellType.AIR:
+            self.world.matrix[sand_i][sand_j] = Sand(sand_i, sand_j, self.world.matrix)
+            return self.world.matrix[sand_i][sand_j]
+        return None
+
+    def sim(self):
+        while self.simulating:
+            self.cycle += 1
+            if self.active_sand is not None and not self.active_sand.static:
+                self.active_sand = self.active_sand.step()
+                if self.active_sand == None:
+                    self.simulating = False
+                    break
+            else:
+                self.sand_produced += 1
+                self.active_sand = self.produce_sand()
+                if self.active_sand == None:
+                    self.simulating = False
+                    break
+            #self.world.print_world()                                           # for fun, drawing the simulation
+            #input("")
+        if self.world.has_floor:
+            print("b",self.sand_produced-1)
+        else:
+            print("a",self.sand_produced-1)
+
 
 test_input = ["498,4 -> 498,6 -> 496,6", "503,4 -> 502,4 -> 502,9 -> 494,9"]
+world_a_test = World(test_input, False)
+world_b_test = World(test_input, True)
+simulator = Simulator(world_a_test)
+simulator.sim()
+simulator = Simulator(world_b_test)
+simulator.sim()
 
-world = World(test_input)
-simulator = Simulator(world)
-simulator.simulate()
+world_a = World(lines, False)
+world_b = World(lines, True)
+simulator = Simulator(world_a)
+simulator.sim()
+simulator = Simulator(world_b)
+simulator.sim()
+
+# The whole simulation would be a lot more efficient if the matrix only handled number values with no classes,
+# which I knew in advance. But the whole structure ended up being pretty bad anyways, so just going with numbers
+# would have probably been better & cleaner.
