@@ -1,7 +1,11 @@
 from __future__ import division 
-from shapely.ops import linemerge
-from aocd import lines
-
+#from aocd import lines
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
+from shapely.geometry import Point
+from shapely.geometry import Polygon
+import os
 test_input = """Sensor at x=2, y=18: closest beacon is at x=-2, y=15
 Sensor at x=9, y=16: closest beacon is at x=10, y=16
 Sensor at x=13, y=2: closest beacon is at x=15, y=3
@@ -16,6 +20,12 @@ Sensor at x=17, y=20: closest beacon is at x=21, y=22
 Sensor at x=16, y=7: closest beacon is at x=15, y=3
 Sensor at x=14, y=3: closest beacon is at x=15, y=3
 Sensor at x=20, y=1: closest beacon is at x=15, y=3"""
+
+script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+rel_path = "input.txt"
+abs_file_path = os.path.join(script_dir, rel_path)
+with open(abs_file_path) as file:
+    lines = [line.rstrip() for line in file]
 
 test_input = test_input.split("\n")
 
@@ -108,19 +118,6 @@ class Diamond():
             return None
         return intersections
 
-def lines_overlap(L1, L2) -> bool:
-    pass
-
-def merge_lines(L1, L2, lines):
-    pass
-
-def handle_overlapping_lines(lines):
-    for line in lines:
-        for compared_line in lines:
-            if line != compared_line:
-                if lines_overlap(line, compared_line):
-                    merge_lines(line, compared_line, lines)
-
 def tuple_tuples_lower_bound(tuple_tuple):
     return tuple_tuple[0][0]
 
@@ -150,9 +147,6 @@ def get_scanned_points_no_on_row(diamonds: 'list[Diamond]', row):
         intersections = d.get_intersections_with_row(row)
         if intersections:
             lines.append( (intersections[0], intersections[1]) )
-        # else:
-        #     print("None")
-
     lines.sort(key=tuple_tuples_lower_bound)
     only_x = list(map(lambda x: [x[0][0], x[1][0]], lines))
     merged = [only_x[0]]
@@ -166,16 +160,81 @@ def get_scanned_points_no_on_row(diamonds: 'list[Diamond]', row):
     total_on_row = get_lines_total_len(merged) - get_no_of_beacons_sensors_on_row(diamonds, row)
     print(total_on_row)
 
+def test(ds: 'list[Diamond]'):
+    polygons = []
+    for idx, d in enumerate(ds):
+        dct = {'col1': [], 'geometry': []}
+        points = []
+        # for c in d.corners:
 
+        #     point = Point(c[0], c[1])
+        #     name = str(c[0])+str(c[1])+str(d.sensor[0])+str(d.sensor[1])+str(d.beacon[0])+str(d.beacon[1])
+        polygon_geom = Polygon(d.corners)
+
+        polygon = gpd.GeoDataFrame(index=[idx], crs='epsg:4326', geometry=[polygon_geom])       
+        polygons.append(polygon)
+        #print(polygon)
+        # gdf = geopandas.GeoDataFrame(dct)
+        # polygons.append(dct)
+    rdf = gpd.GeoDataFrame( pd.concat( polygons, ignore_index=True ) )
+    rdf.shape
+    import itertools
+    geoms = rdf['geometry'].tolist()
+    print(geoms)
+    print("**")
+    intersection_iter = gpd.GeoDataFrame(gpd.GeoSeries([poly[0].union(poly[1]) for poly in  itertools.combinations(geoms, 2) if poly[0].union(poly[1])]), columns=['geometry'])
+    #intersection_iter.to_file("intersection_iter.shp") 
+    union_iter: Polygon = intersection_iter.unary_union
+    print(union_iter)
+    df = gpd.GeoDataFrame()
+    df['index'] = "0"
+    df['geometry'] = [ union_iter ]
+    df = df.set_geometry('geometry')
+    df.loc[[0],'geometry'].plot()
+    interior_ring = union_iter.interiors[0].coords.xy
+    interior_ring = list(zip(interior_ring[0], interior_ring[1]))
+    print(interior_ring)
+    return interior_ring
+    #plt.savefig("test.png")
+    #print(polygons)
+    # auto_inter = gpd.overlay(polygons, polygons, how='intersection')
+    # auto_inter.shape
+
+def get_freq(x,y):
+    m = 4000000
+    return x*m + y
+
+def get_all_points_next_to_point(p):
+    x, y = p[0], p[1]
+    all_points = []
+    all_points.append((x+1, y))
+    all_points.append((x-1, y))
+    all_points.append((x, y+1))
+    all_points.append((x, y-1))
+    return all_points
+
+
+def point_next_to_all_given_points(arr: list):
+    points = []
+    for idx, p in enumerate(arr):
+        ap = get_all_points_next_to_point(p)
+        if idx == 0:
+            points += ap
+        else:
+            for pp in points:
+                if pp not in ap:
+                    points.remove(pp)
+    print(points)
+    return (int(points[0][0]), int(points[0][1]))
 row = 10
 row = 2000000
 scanned_areas = []
 for line in lines:
     d = Diamond(line)
-    # intersections = d.get_intersections_with_row(row)
-    # print(d.get_no_of_beacon_sensor_on_row(row))
-    # print(intersections)
     scanned_areas.append(d)
 
-get_scanned_points_no_on_row(scanned_areas, row)
-# 5068328 wrong
+#get_scanned_points_no_on_row(scanned_areas, row)
+int_rin = test(scanned_areas)
+p = point_next_to_all_given_points(int_rin)
+val = get_freq(p[0], p[1])
+print(val)
